@@ -64,6 +64,80 @@ CREATE OPERATOR SCHEMA_PROM.@> (
     FUNCTION = SCHEMA_CATALOG.label_value_contains
 );
 
+--------------------- op == !== ==~ !=~ ------------------------
+
+CREATE OR REPLACE FUNCTION SCHEMA_CATALOG.match_equals(labels SCHEMA_PROM.label_array, _op SCHEMA_TAG.tag_op_equals)
+RETURNS boolean
+AS $func$
+    SELECT labels &&
+    (
+        SELECT COALESCE(array_agg(l.id), array[]::int[])
+        FROM SCHEMA_CATALOG.label l
+        WHERE l.key = _op.tag_key and l.value = (_op.value#>>'{}')
+    )
+$func$
+LANGUAGE SQL STABLE PARALLEL SAFE STRICT;
+
+CREATE OPERATOR SCHEMA_CATALOG.? (
+    LEFTARG = SCHEMA_PROM.label_array,
+    RIGHTARG = SCHEMA_TAG.tag_op_equals,
+    FUNCTION = SCHEMA_CATALOG.match_equals
+);
+
+CREATE OR REPLACE FUNCTION SCHEMA_CATALOG.match_not_equals(labels SCHEMA_PROM.label_array, _op SCHEMA_TAG.tag_op_not_equals)
+RETURNS boolean
+AS $func$
+    SELECT NOT (labels &&
+    (
+        SELECT COALESCE(array_agg(l.id), array[]::int[])
+        FROM SCHEMA_CATALOG.label l
+        WHERE l.key = _op.tag_key and l.value = (_op.value#>>'{}')
+    ))
+$func$
+LANGUAGE SQL STABLE PARALLEL SAFE STRICT;
+
+CREATE OPERATOR SCHEMA_CATALOG.? (
+    LEFTARG = SCHEMA_PROM.label_array,
+    RIGHTARG = SCHEMA_TAG.tag_op_not_equals,
+    FUNCTION = SCHEMA_CATALOG.match_not_equals
+);
+
+CREATE OR REPLACE FUNCTION SCHEMA_CATALOG.match_regexp_matches(labels SCHEMA_PROM.label_array, _op SCHEMA_TAG.tag_op_regexp_matches)
+RETURNS boolean
+AS $func$
+    SELECT labels &&
+    (
+        SELECT COALESCE(array_agg(l.id), array[]::int[])
+        FROM SCHEMA_CATALOG.label l
+        WHERE l.key = _op.tag_key and l.value ~ _op.value
+    )
+$func$
+LANGUAGE SQL STABLE PARALLEL SAFE STRICT;
+
+CREATE OPERATOR SCHEMA_CATALOG.? (
+    LEFTARG = SCHEMA_PROM.label_array,
+    RIGHTARG = SCHEMA_TAG.tag_op_regexp_matches,
+    FUNCTION = SCHEMA_CATALOG.match_regexp_matches
+);
+
+CREATE OR REPLACE FUNCTION SCHEMA_CATALOG.match_regexp_not_matches(labels SCHEMA_PROM.label_array, _op SCHEMA_TAG.tag_op_regexp_not_matches)
+RETURNS boolean
+AS $func$
+    SELECT NOT (labels &&
+    (
+        SELECT COALESCE(array_agg(l.id), array[]::int[])
+        FROM SCHEMA_CATALOG.label l
+        WHERE l.key = _op.tag_key and l.value ~ _op.value
+    ))
+$func$
+LANGUAGE SQL STABLE PARALLEL SAFE STRICT;
+
+CREATE OPERATOR SCHEMA_CATALOG.? (
+    LEFTARG = SCHEMA_PROM.label_array,
+    RIGHTARG = SCHEMA_TAG.tag_op_regexp_not_matches,
+    FUNCTION = SCHEMA_CATALOG.match_regexp_not_matches
+);
+
 --------------------- op ? ------------------------
 
 CREATE OR REPLACE FUNCTION SCHEMA_CATALOG.label_match(labels SCHEMA_PROM.label_array, matchers SCHEMA_PROM.matcher_positive)
@@ -92,6 +166,7 @@ CREATE OPERATOR SCHEMA_PROM.? (
     FUNCTION = SCHEMA_CATALOG.label_match
 );
 
+/*
 --------------------- op == !== ==~ !=~ ------------------------
 
 CREATE OR REPLACE FUNCTION SCHEMA_CATALOG.label_find_key_equal(key_to_match SCHEMA_PROM.label_key, pat SCHEMA_PROM.pattern)
@@ -153,3 +228,5 @@ CREATE OPERATOR SCHEMA_PROM.!=~ (
     RIGHTARG = SCHEMA_PROM.pattern,
     FUNCTION = SCHEMA_CATALOG.label_find_key_not_regex
 );
+
+*/

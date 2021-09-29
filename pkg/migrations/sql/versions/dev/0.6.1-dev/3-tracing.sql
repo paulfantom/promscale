@@ -1,9 +1,4 @@
 
-CREATE SCHEMA IF NOT EXISTS SCHEMA_TRACING;
-GRANT USAGE ON SCHEMA SCHEMA_TRACING TO prom_reader;
-
-CREATE SCHEMA IF NOT EXISTS SCHEMA_TRACING_PUBLIC;
-GRANT USAGE ON SCHEMA SCHEMA_TRACING_PUBLIC TO prom_reader;
 
 CALL SCHEMA_CATALOG.execute_everywhere('tracing_types', $ee$ DO $$ BEGIN
     CREATE DOMAIN SCHEMA_TRACING_PUBLIC.trace_id uuid NOT NULL CHECK (value != '00000000-0000-0000-0000-000000000000');
@@ -17,9 +12,6 @@ CALL SCHEMA_CATALOG.execute_everywhere('tracing_types', $ee$ DO $$ BEGIN
 
     CREATE DOMAIN SCHEMA_TRACING_PUBLIC.tag_map jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(value) = 'object');
     GRANT USAGE ON DOMAIN SCHEMA_TRACING_PUBLIC.tag_map TO prom_reader;
-
-    CREATE DOMAIN SCHEMA_TRACING_PUBLIC.tag_matchers SCHEMA_TRACING_PUBLIC.tag_map[] NOT NULL;
-    GRANT USAGE ON DOMAIN SCHEMA_TRACING_PUBLIC.tag_matchers TO prom_reader;
 
     CREATE DOMAIN SCHEMA_TRACING_PUBLIC.tag_type smallint NOT NULL; --bitmap, may contain several types
     GRANT USAGE ON DOMAIN SCHEMA_TRACING_PUBLIC.tag_type TO prom_reader;
@@ -43,6 +35,9 @@ CALL SCHEMA_CATALOG.execute_everywhere('tracing_types', $ee$ DO $$ BEGIN
     );
     GRANT USAGE ON TYPE SCHEMA_TRACING_PUBLIC.status_code TO prom_reader;
 END $$ $ee$);
+
+UPDATE SCHEMA_CATALOG.remote_commands SET seq = seq+1 WHERE seq >= 8;
+UPDATE SCHEMA_CATALOG.remote_commands SET seq = 8 WHERE key='tracing_types';
 
 CREATE TABLE SCHEMA_TRACING.tag_key
 (
@@ -200,7 +195,6 @@ DECLARE
     _is_timescaledb_installed boolean = false;
     _timescaledb_major_version int;
     _is_multinode boolean = false;
-    _saved_search_path text;
 BEGIN
     /*
         These functions do not exist until the
@@ -230,12 +224,6 @@ BEGIN
     END IF;
     IF _is_timescaledb_installed THEN
         IF _is_multinode THEN
-            --need to clear the search path while creating distributed
-            --hypertables because otherwise the datanodes don't find
-            --the right column types since type names are not schema
-            --qualified if in search path.
-            _saved_search_path := current_setting('search_path');
-            SET search_path = pg_temp;
             PERFORM SCHEMA_TIMESCALE.create_distributed_hypertable(
                 'SCHEMA_TRACING.span'::regclass,
                 'start_time'::name,
@@ -260,7 +248,6 @@ BEGIN
                 chunk_time_interval=>'07:59:48.644258'::interval,
                 create_default_indexes=>false
             );
-            execute format('SET search_path = %s', _saved_search_path);
         ELSE
             PERFORM SCHEMA_TIMESCALE.create_hypertable(
                 'SCHEMA_TRACING.span'::regclass,
@@ -291,4 +278,3 @@ BEGIN
 END;
 $block$
 ;
-

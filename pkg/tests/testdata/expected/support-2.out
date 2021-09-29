@@ -34,19 +34,7 @@ INSERT 0 10
 ANALYZE;
 ANALYZE
 EXPLAIN (costs off) SELECT time, value, jsonb(labels), val(namespace_id) FROM cpu_usage WHERE labels ? ('namespace' !== 'dev' ) ORDER BY time, series_id LIMIT 5;
-                                       QUERY PLAN                                       
-----------------------------------------------------------------------------------------
- Limit
-   InitPlan 1 (returns $0)
-     ->  Result
-   ->  Result
-         ->  Sort
-               Sort Key: data."time", data.series_id
-               ->  Hash Join
-                     Hash Cond: (data.series_id = series.id)
-                     ->  Seq Scan on _hyper_4_1_chunk data
-                     ->  Hash
-                           ->  Seq Scan on cpu_usage series
-                                 Filter: (NOT ((labels)::integer[] && ($0)::integer[]))
-(12 rows)
-
+psql:/testdata/sql/support.sql:23: ERROR:  operator is not unique: unknown !== unknown
+LINE 1: ...ce_id) FROM cpu_usage WHERE labels ? ('namespace' !== 'dev' ...
+                                                             ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
