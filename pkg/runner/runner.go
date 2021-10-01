@@ -95,7 +95,7 @@ func Run(cfg *Config) error {
 		otlpgrpc.RegisterTracesServer(grpcServer, api.NewTraceServer(client))
 
 		queryPlugin := shared.StorageGRPCPlugin{
-			Impl: &jaegerquery.Query{},
+			Impl: jaegerquery.New(client.Connection),
 		}
 		err := queryPlugin.GRPCServer(nil, grpcServer)
 		if err != nil {

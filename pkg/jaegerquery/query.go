@@ -8,13 +8,15 @@ import (
 	"github.com/jaegertracing/jaeger/storage/dependencystore"
 	"github.com/jaegertracing/jaeger/storage/spanstore"
 	"github.com/timescale/promscale/pkg/log"
+	"github.com/timescale/promscale/pkg/pgxconn"
 )
 
 type Query struct {
+	conn pgxconn.PgxConn
 }
 
-func New() *Query {
-	return &Query{}
+func New(conn pgxconn.PgxConn) *Query {
+	return &Query{conn}
 }
 
 func (p *Query) SpanReader() spanstore.Reader {
@@ -36,19 +38,11 @@ func (p *Query) GetTrace(ctx context.Context, traceID model.TraceID) (*model.Tra
 }
 
 func (p *Query) GetServices(ctx context.Context) ([]string, error) {
-	//query db using pgx here
-	log.Warn("Get Svc")
-
-	return []string{"test"}, nil
+	return getServices(ctx, p.conn)
 }
 
 func (p *Query) GetOperations(ctx context.Context, query spanstore.OperationQueryParameters) ([]spanstore.Operation, error) {
-	//query db using pgx here
-	log.Warn("Get op")
-
-	return []spanstore.Operation{
-		{Name: "testOp", SpanKind: "client"},
-	}, nil
+	return getOperations(ctx, p.conn, query)
 }
 
 func (p *Query) FindTraces(ctx context.Context, query *spanstore.TraceQueryParameters) ([]*model.Trace, error) {
