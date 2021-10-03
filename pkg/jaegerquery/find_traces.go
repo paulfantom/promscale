@@ -24,6 +24,10 @@ func findTraces(ctx context.Context, conn pgxconn.PgxConn, q *spanstore.TraceQue
 	}
 	defer rows.Close()
 
+	return scanTraces(rows)
+}
+
+func scanTraces(rows pgxconn.PgxRows) ([]*model.Trace, error) {
 	traces := pdata.NewTraces()
 	for rows.Next() {
 		if rows.Err() != nil {

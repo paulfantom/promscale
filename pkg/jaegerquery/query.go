@@ -32,9 +32,7 @@ func (p *Query) SpanWriter() spanstore.Writer {
 }
 
 func (p *Query) GetTrace(ctx context.Context, traceID model.TraceID) (*model.Trace, error) {
-	//query db using pgx here
-	log.Warn("Get trace")
-	return nil, nil
+	return getTrace(ctx, p.conn, traceID)
 }
 
 func (p *Query) GetServices(ctx context.Context) ([]string, error) {
@@ -49,10 +47,8 @@ func (p *Query) FindTraces(ctx context.Context, query *spanstore.TraceQueryParam
 	return findTraces(ctx, p.conn, query)
 }
 
-func (p *Query) FindTraceIDs(ctx context.Context, traceQueryParameters *spanstore.TraceQueryParameters) ([]model.TraceID, error) {
-	//query db using pgx here
-	log.Warn("find trace ids")
-	return nil, nil
+func (p *Query) FindTraceIDs(ctx context.Context, query *spanstore.TraceQueryParameters) ([]model.TraceID, error) {
+	return findTraceIDs(ctx, p.conn, query)
 }
 
 func (p *Query) GetDependencies(ctx context.Context, endTs time.Time, lookback time.Duration) ([]model.DependencyLink, error) {

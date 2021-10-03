@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgtype"
+	"github.com/jaegertracing/jaeger/model"
 	"github.com/jaegertracing/jaeger/storage/spanstore"
 	"github.com/timescale/promscale/pkg/pgmodel/ingestor"
 	"github.com/timescale/promscale/pkg/pgxconn"
@@ -86,11 +87,31 @@ const (
 )
 
 func findTracesQuery(q *spanstore.TraceQueryParameters) (string, []interface{}) {
-	subquey, params := buildTraceIDSubquery(q)
-	whereClause := fmt.Sprintf("s.trace_id IN (%s)", subquey)
+	subquery, params := buildTraceIDSubquery(q)
+	whereClause := fmt.Sprintf("s.trace_id IN (%s)", subquery)
 	return fmt.Sprintf(
 		fullTraceSQLFormat,
 		whereClause), params
+}
+
+func findTraceIDsQuery(q *spanstore.TraceQueryParameters) (string, []interface{}) {
+	subquery, params := buildTraceIDSubquery(q)
+	return subquery, params
+}
+
+func getTraceQuery(traceID model.TraceID) (string, []interface{}, error) {
+	var b [16]byte
+	n, err := traceID.MarshalTo(b[:])
+	if n != 16 || err != nil {
+		return "", nil, fmt.Errorf("Marshaling TraceID: %w", err)
+	}
+
+	var uuid pgtype.UUID
+	uuid.Set(b)
+	params := []interface{}{uuid}
+
+	whereClause := fmt.Sprintf("s.trace_id = $1")
+	return fmt.Sprintf(fullTraceSQLFormat, whereClause), params, nil
 }
 
 func buildTraceIDSubquery(q *spanstore.TraceQueryParameters) (string, []interface{}) {
