@@ -46,9 +46,7 @@ func (p *Query) GetOperations(ctx context.Context, query spanstore.OperationQuer
 }
 
 func (p *Query) FindTraces(ctx context.Context, query *spanstore.TraceQueryParameters) ([]*model.Trace, error) {
-	//query db using pgx here
-	log.Warn("find traces")
-	return nil, nil
+	return findTraces(ctx, p.conn, query)
 }
 
 func (p *Query) FindTraceIDs(ctx context.Context, traceQueryParameters *spanstore.TraceQueryParameters) ([]model.TraceID, error) {
