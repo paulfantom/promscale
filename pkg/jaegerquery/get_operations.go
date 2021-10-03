@@ -48,10 +48,8 @@ func getOperations(ctx context.Context, conn pgxconn.PgxConn, query spanstore.Op
 	}
 
 	sqlQuery := fmt.Sprintf(getOperationsSQLFormat, kindQual)
-	fmt.Println(sqlQuery, args)
 
 	if err := conn.QueryRow(ctx, sqlQuery, args...).Scan(&pgOperationNames, &pgSpanKinds); err != nil {
-		fmt.Println("error", err)
 		return operationsResp, fmt.Errorf("fetching operations: %w", err)
 	}
 

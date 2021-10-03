@@ -18,7 +18,6 @@ func getTrace(ctx context.Context, conn pgxconn.PgxConn, traceID model.TraceID) 
 	if err != nil {
 		return nil, fmt.Errorf("get trace query: %w", err)
 	}
-	fmt.Println(query, params)
 	rows, err := conn.Query(ctx, query, params...)
 	if err != nil {
 		return nil, fmt.Errorf("querying traces: %w", err)

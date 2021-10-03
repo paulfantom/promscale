@@ -16,7 +16,6 @@ import (
 
 func findTraceIDs(ctx context.Context, conn pgxconn.PgxConn, q *spanstore.TraceQueryParameters) ([]model.TraceID, error) {
 	query, params := findTraceIDsQuery(q)
-	fmt.Println(query, params)
 	rows, err := conn.Query(ctx, query, params...)
 	if err != nil {
 		return nil, fmt.Errorf("querying traces: %w", err)

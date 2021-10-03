@@ -75,7 +75,7 @@ const (
 	  inst_lib.name,
 	  inst_lib.version,
 	  inst_lib_url.url
-	ORDER BY s.trace_id --todo: get rid of for lookup by trace_id`
+	%s`
 
 	subqueryFormat = `
 	SELECT
@@ -86,12 +86,20 @@ const (
 	`
 )
 
-func findTracesQuery(q *spanstore.TraceQueryParameters) (string, []interface{}) {
-	subquery, params := buildTraceIDSubquery(q)
-	whereClause := fmt.Sprintf("s.trace_id IN (%s)", subquery)
+func buildTraceQuery(traceIDClause string, multipleTraces bool) string {
+	orderBy := ""
+	if multipleTraces {
+		orderBy = "ORDER BY s.trace_id"
+	}
 	return fmt.Sprintf(
 		fullTraceSQLFormat,
-		whereClause), params
+		traceIDClause, orderBy)
+}
+
+func findTracesQuery(q *spanstore.TraceQueryParameters) (string, []interface{}) {
+	subquery, params := buildTraceIDSubquery(q)
+	traceIDClause := fmt.Sprintf("s.trace_id IN (%s)", subquery)
+	return buildTraceQuery(traceIDClause, true), params
 }
 
 func findTraceIDsQuery(q *spanstore.TraceQueryParameters) (string, []interface{}) {
@@ -103,15 +111,15 @@ func getTraceQuery(traceID model.TraceID) (string, []interface{}, error) {
 	var b [16]byte
 	n, err := traceID.MarshalTo(b[:])
 	if n != 16 || err != nil {
-		return "", nil, fmt.Errorf("Marshaling TraceID: %w", err)
+		return "", nil, fmt.Errorf("marshaling TraceID: %w", err)
 	}
 
 	var uuid pgtype.UUID
 	uuid.Set(b)
 	params := []interface{}{uuid}
 
-	whereClause := fmt.Sprintf("s.trace_id = $1")
-	return fmt.Sprintf(fullTraceSQLFormat, whereClause), params, nil
+	traceIDClause := "s.trace_id = $1"
+	return buildTraceQuery(traceIDClause, false), params, nil
 }
 
 func buildTraceIDSubquery(q *spanstore.TraceQueryParameters) (string, []interface{}) {
