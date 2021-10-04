@@ -154,7 +154,7 @@ func PgConnectURL(dbName string, superuser SuperuserStatus) string {
 }
 
 func PgConnectURLUser(dbName string, user string) string {
-	return fmt.Sprintf(connectTemplate, user, pgHost, pgPort.Int(), dbName)
+	return fmt.Sprintf(connectTemplate, user, pgHost, 5555/* pgPort.Int()*/, dbName)
 }
 
 func getRoleUser(role string) string {
