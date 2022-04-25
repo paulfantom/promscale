@@ -40,14 +40,16 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
-        name: Run GoReleaser Test
+        name: GoReleaser Nightly Release
         uses: goreleaser/goreleaser-action@v2
-        # do not run test if actually releasing
+        #release on every merge but not on tags
         if: startsWith(github.ref, 'refs/tags/') != true
         with:
           distribution: goreleaser
           version: ${{ env.goreleaser-version }}
-          args: release --snapshot --skip-publish --rm-dist -f .goreleaser.yml
+          args: release --rm-dist --nightly -f .goreleaser.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       -
         name: GoReleaser Release
         uses: goreleaser/goreleaser-action@v2

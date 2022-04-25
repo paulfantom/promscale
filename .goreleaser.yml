@@ -29,6 +29,9 @@ scoop:
     name: Timescale
     email: support@timescale.com
 
+nightly:
+  name_template: '{{ incpatch .Version }}-{{ .ShortCommit }}-dev'
+
 nfpms:
   - builds:
     - promscale
